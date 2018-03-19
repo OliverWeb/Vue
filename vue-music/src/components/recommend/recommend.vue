@@ -1,37 +1,60 @@
 <template>
   <div class="recommend" ref="recommend">
-    <div class="recommend-content">
-      <div v-if="recommends.length" class="slider-wrapper">
-        <slider>
-          <div v-for="item in recommends" :key="item.id">
-            <a :href="item.linkUrl">
-              <img :src="item.picUrl" alt="">
-            </a>
-          </div>
-        </slider>
+    <scroll ref="scroll" class="recommend-content" :data="discList">
+      <div>
+        <div v-if="recommends.length" class="slider-wrapper" ref="sliderWrapper">
+          <slider>
+            <div v-for="item in recommends" :key="item.id">
+              <a :href="item.linkUrl">
+                <img class="needclick" @load="loadImage" :src="item.picUrl" alt="">
+              </a>
+            </div>
+          </slider>
+        </div>
+        <div class="recommend-list">
+          <h1 class="list-title">热门歌单推荐</h1>
+          <ul>
+            <li v-for="item in discList" :key="item.dissid" class="item">
+              <div class="icon">
+                <img width="60" height="60" v-lazy="item.imgurl">
+              </div>
+              <div class="text">
+                <h2 class="name" v-html="item.creator.name"></h2>
+                <p class="desc" v-html="item.dissname"></p>
+              </div>
+            </li>
+          </ul>
+        </div>
       </div>
-      <div class="recommend-list">
-        <h1 class="list-title">热门歌单推荐</h1>
-        <ul>
-        </ul>
+      <div class="loading-container" v-show="!discList.length">
+        <loading :title="message"/>
       </div>
-    </div>
+    </scroll>
   </div>
 </template>
 
 <script type="text/ecmascript-6">
+  import Loading from '../../base/loading/loading'
+  import Scroll from '../../base/scroll/scroll'
   import Slider from '../../base/slider/slider'
-  import {getRecommend} from '../../api/recommend'
+  import {getRecommend, getDiscList} from '../../api/recommend'
   import {ERR_OK} from '../../api/config'
 
   export default {
     data() {
       return {
-        recommends: []
+        recommends: [],
+        discList: [],
+        message: '载入完成。。。。'
       }
     },
     created() {
-      this._getRecommend()
+      setTimeout(() => {
+        this._getRecommend()
+      }, 2000)
+      setTimeout(() => {
+        this._getDiscList()
+      }, 4000)
     },
     methods: {
       _getRecommend() {
@@ -40,12 +63,32 @@
             this.recommends = res.data.slider
           }
         })
+      },
+      _getDiscList() {
+        getDiscList().then((res) => {
+          if (res.code === ERR_OK) {
+            this.discList = res.data.list
+          }
+        })
+      },
+      loadImage() {
+        if (!this.checkLoaded) {
+          this.$refs.scroll.refresh()
+          this.checkLoaded = true
+        }
       }
     },
     components: {
-      Slider
+      Slider,
+      Scroll,
+      Loading
     }
   }
+  /*
+   * todo 父组件和在子组件进行传递默认值
+   * 子组件设置默认值，通过组件进行传递的，父元素data进行修改子组件的值
+   * todo {{}}的用在的地方
+    * */
 </script>
 
 <style scoped lang="stylus" rel="stylesheet/stylus">
